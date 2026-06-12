@@ -1,0 +1,98 @@
+[
+  {
+    "nickname": "张工",
+    "remark": "张建国 中石化炼化",
+    "region": "北京 朝阳",
+    "tags": "能源,客户",
+    "wxid": "demo_zhang01",
+    "last_chat_time": "2026-06-10",
+    "chat_history": ["方案我们内部评审通过了", "下周约个时间细聊"],
+    "is_partner": true,
+    "lat": 39.9512,
+    "lng": 116.4319
+  },
+  {
+    "nickname": "Lily",
+    "remark": "李雪 华夏基金 投资经理",
+    "region": "上海 浦东新区",
+    "tags": "投资基金,上海",
+    "wxid": "demo_li02",
+    "last_chat_time": "2026-05-20",
+    "chat_history": ["材料收到了，谢谢"],
+    "is_partner": true,
+    "lat": 31.2210,
+    "lng": 121.5450
+  },
+  {
+    "nickname": "王经理",
+    "remark": "王伟 蓝海科技 CTO",
+    "region": "广东 深圳",
+    "tags": "科技,深圳",
+    "wxid": "demo_wang03",
+    "last_chat_time": "2026-04-02",
+    "chat_history": ["POC 环境我们搭好了"],
+    "is_partner": true,
+    "lat": 22.5485,
+    "lng": 114.0617
+  },
+  {
+    "nickname": "Amy",
+    "remark": "陈敏 远东证券 研究所",
+    "region": "中国香港 中西区",
+    "tags": "证券,研究",
+    "wxid": "demo_chen04",
+    "last_chat_time": "2026-01-15",
+    "chat_history": ["年度策略报告发你了"],
+    "is_partner": true,
+    "lat": 22.2820,
+    "lng": 114.1550
+  },
+  {
+    "nickname": "赵总",
+    "remark": "赵强 恒达地产",
+    "region": "浙江 杭州",
+    "tags": "地产",
+    "wxid": "demo_zhao05",
+    "last_chat_time": "",
+    "chat_history": [],
+    "is_partner": false,
+    "lat": null,
+    "lng": null
+  },
+  {
+    "nickname": "Kenji",
+    "remark": "佐藤健 樱花商社",
+    "region": "日本 东京 东京都",
+    "tags": "贸易",
+    "wxid": "demo_sato06",
+    "last_chat_time": "2026-06-01",
+    "chat_history": ["合同条款再确认一下"],
+    "is_partner": true,
+    "lat": 35.6762,
+    "lng": 139.6503
+  },
+  {
+    "nickname": "小刘",
+    "remark": "仅聊天",
+    "region": "中国大陆",
+    "tags": "",
+    "wxid": "demo_liu07",
+    "last_chat_time": "",
+    "chat_history": [],
+    "is_partner": false,
+    "lat": null,
+    "lng": null
+  },
+  {
+    "nickname": "孙老师",
+    "remark": "孙丽 国家电网 培训中心",
+    "region": "江苏 南京",
+    "tags": "能源,国企",
+    "wxid": "demo_sun08",
+    "last_chat_time": "2026-03-08",
+    "chat_history": ["课程安排表收到", "感谢支持"],
+    "is_partner": true,
+    "lat": 32.0584,
+    "lng": 118.7965
+  }
+]

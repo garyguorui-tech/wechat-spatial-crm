@@ -1,0 +1,34 @@
+# ===== 隐私：真实采集数据绝对不能提交 =====
+wechat_data.json
+wechat_data_partial*.json
+wechat_data_sample*.json
+crm_annotations.json
+客情数据.xlsx
+客情数据.csv
+拜访清单_*.csv
+
+# ===== 依赖（几百MB，别人自己装）=====
+libs/
+
+# ===== Python / 运行产物 =====
+__pycache__/
+*.pyc
+*.pyo
+.streamlit/
+run_debug.log
+launch_debug.log
+dash.log
+full_run*.log
+uia_*.txt
+probe_*.txt
+*.lnk
+
+# ===== 内部文档（含本机用户名/路径，不公开）=====
+项目交接说明.md
+
+# ===== 系统 =====
+.DS_Store
+Thumbs.db
+
+# 所有日志
+*.log
