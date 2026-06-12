@@ -17,9 +17,26 @@
 - 🏢 **自动识别**：从备注/标签推断公司名与 16 类公司类型
 - 🔄 **网页一键刷新**：在看板上直接触发重新采集
 
-## 🖼️ 截图 Screenshots
+## 🖼️ 预览 Preview
 
-> 建议在此放几张看板截图（地图 / 出差拜访 / 客户管理），仓库里不含真实数据，截图请用示例数据或打码。
+![看板预览](docs/preview.svg)
+
+> 上图为界面示意（示例数据）。仓库**不含任何真实数据**；想放真实截图请用示例数据或先打码，再放到 `docs/` 并在此引用。
+
+---
+
+## 🌐 English (short)
+
+**What it is:** a two-part tool — (1) a Windows RPA script (`rpa_extractor.py`, via `uiautomation`) that walks your PC WeChat 4.x contact list and session list into a JSON file, and (2) a Streamlit + Folium dashboard (`crm_dashboard.py`) that turns it into a lightweight spatial CRM: customer map, province-based business-trip visit lists, churn alerts with adjustable threshold, editable customer records, and rule-based auto-tiering.
+
+**Try it (demo data, no WeChat needed):**
+```bash
+pip install -r requirements.txt
+streamlit run crm_dashboard.py   # auto-loads wechat_data.sample.json
+```
+**Collect your own data (Windows + WeChat 4.x):** `python rpa_extractor.py`
+
+⚠️ Personal/educational use only, on **your own** account & data. Automating WeChat may violate its ToS — use at your own risk. Never commit real data or scrape others' private info. See [Disclaimer](#-合规与免责声明-disclaimer).
 
 ---
 

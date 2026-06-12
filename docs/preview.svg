@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+  <rect width="960" height="560" fill="#f5f7fa"/>
+
+  <!-- 顶部标题栏 -->
+  <rect x="0" y="0" width="960" height="56" fill="#1f2a44"/>
+  <text x="24" y="36" fill="#ffffff" font-size="22" font-weight="700">🗺️ 微信客情 · 空间 CRM 看板</text>
+  <text x="770" y="35" fill="#9fb0d0" font-size="13">WeChat Spatial CRM</text>
+
+  <!-- 左侧边栏：流失预警 -->
+  <rect x="0" y="56" width="232" height="504" fill="#fbfcfe"/>
+  <rect x="0" y="56" width="232" height="504" fill="none" stroke="#e3e8ef"/>
+  <text x="18" y="92" fill="#c0392b" font-size="15" font-weight="700">🚨 高危流失预警</text>
+  <text x="18" y="114" fill="#8a93a3" font-size="11">超过 N 天未联系 · 阈值可调</text>
+
+  <!-- 全局省份选择 -->
+  <rect x="16" y="128" width="200" height="34" rx="5" fill="#eef2f7" stroke="#d6deea"/>
+  <text x="28" y="150" fill="#445" font-size="12">🧭 出差目的地：北京 ▾</text>
+
+  <!-- 预警卡片 -->
+  <g>
+    <rect x="16" y="178" width="200" height="46" rx="4" fill="#fbeaea" stroke="#e64545" stroke-width="0" />
+    <rect x="16" y="178" width="4" height="46" fill="#e64545"/>
+    <text x="28" y="198" fill="#222" font-size="12" font-weight="700">张建国 中石化炼化  <tspan fill="#c0392b">152天</tspan></text>
+    <text x="28" y="214" fill="#777" font-size="10.5">能源/环保 · 北京 · A级</text>
+  </g>
+  <g>
+    <rect x="16" y="232" width="200" height="46" rx="4" fill="#fbeaea"/>
+    <rect x="16" y="232" width="4" height="46" fill="#e64545"/>
+    <text x="28" y="252" fill="#222" font-size="12" font-weight="700">陈敏 远东证券  <tspan fill="#c0392b">98天</tspan></text>
+    <text x="28" y="268" fill="#777" font-size="10.5">证券/研究 · 香港 · B级</text>
+  </g>
+  <g>
+    <rect x="16" y="286" width="200" height="46" rx="4" fill="#fbeaea"/>
+    <rect x="16" y="286" width="4" height="46" fill="#e64545"/>
+    <text x="28" y="306" fill="#222" font-size="12" font-weight="700">王伟 蓝海科技  <tspan fill="#c0392b">63天</tspan></text>
+    <text x="28" y="322" fill="#777" font-size="10.5">科技/互联网 · 深圳 · B级</text>
+  </g>
+  <text x="18" y="372" fill="#8a93a3" font-size="11">⏰ 流失阈值  7 ─●──── 180 天</text>
+  <rect x="16" y="402" width="200" height="30" rx="5" fill="#eef2f7" stroke="#d6deea"/>
+  <text x="30" y="421" fill="#445" font-size="11.5">🔄 刷新微信数据</text>
+
+  <!-- 主区域 KPI -->
+  <g font-weight="700">
+    <rect x="252" y="76" width="160" height="70" rx="8" fill="#ffffff" stroke="#e3e8ef"/>
+    <text x="268" y="104" fill="#8a93a3" font-size="12" font-weight="400">👥 总客户数</text>
+    <text x="268" y="132" fill="#1f2a44" font-size="24">8,539</text>
+
+    <rect x="424" y="76" width="160" height="70" rx="8" fill="#ffffff" stroke="#e3e8ef"/>
+    <text x="440" y="104" fill="#8a93a3" font-size="12" font-weight="400">🤝 合作伙伴</text>
+    <text x="440" y="132" fill="#1f2a44" font-size="24">915</text>
+
+    <rect x="596" y="76" width="160" height="70" rx="8" fill="#ffffff" stroke="#e3e8ef"/>
+    <text x="612" y="104" fill="#8a93a3" font-size="12" font-weight="400">📅 本月跟进</text>
+    <text x="612" y="132" fill="#1f2a44" font-size="24">126</text>
+
+    <rect x="768" y="76" width="168" height="70" rx="8" fill="#ffffff" stroke="#e3e8ef"/>
+    <text x="784" y="104" fill="#8a93a3" font-size="12" font-weight="400">⭐ 核心KA</text>
+    <text x="784" y="132" fill="#c0392b" font-size="24">235</text>
+  </g>
+
+  <!-- 地图区域 -->
+  <text x="252" y="176" fill="#1f2a44" font-size="15" font-weight="700">🌏 合作伙伴地理分布</text>
+  <rect x="252" y="188" width="684" height="356" rx="8" fill="#e9eef3" stroke="#dbe2ea"/>
+  <!-- 简化"陆地"形状 -->
+  <path d="M300,300 Q420,210 560,250 T820,260 Q880,300 840,380 Q700,470 520,440 T320,420 Q270,360 300,300 Z" fill="#dfe7ee"/>
+  <path d="M360,330 Q470,290 600,310 Q740,330 800,360" fill="none" stroke="#cbd5e1" stroke-width="2"/>
+  <!-- 标记点 -->
+  <g>
+    <circle cx="690" cy="300" r="9" fill="#2d6cdf" stroke="#fff" stroke-width="2"/>
+    <circle cx="640" cy="340" r="9" fill="#2d6cdf" stroke="#fff" stroke-width="2"/>
+    <circle cx="560" cy="360" r="9" fill="#e64545" stroke="#fff" stroke-width="2"/>
+    <circle cx="600" cy="320" r="9" fill="#2d6cdf" stroke="#fff" stroke-width="2"/>
+    <circle cx="500" cy="300" r="9" fill="#e64545" stroke="#fff" stroke-width="2"/>
+    <circle cx="730" cy="350" r="9" fill="#2d6cdf" stroke="#fff" stroke-width="2"/>
+    <circle cx="450" cy="360" r="9" fill="#2d6cdf" stroke="#fff" stroke-width="2"/>
+    <!-- 聚合簇 -->
+    <circle cx="660" cy="330" r="16" fill="#2d6cdf" opacity="0.85"/>
+    <text x="660" y="335" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">23</text>
+  </g>
+  <!-- 图例 -->
+  <rect x="268" y="500" width="270" height="30" rx="6" fill="#ffffff" opacity="0.9" stroke="#dbe2ea"/>
+  <circle cx="286" cy="515" r="6" fill="#2d6cdf"/><text x="298" y="519" fill="#555" font-size="11">正常客户</text>
+  <circle cx="372" cy="515" r="6" fill="#e64545"/><text x="384" y="519" fill="#555" font-size="11">流失预警</text>
+  <text x="452" y="519" fill="#999" font-size="11">点击查看客情</text>
+</svg>
