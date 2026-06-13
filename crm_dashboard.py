@@ -32,7 +32,7 @@ import folium
 import pandas as pd
 import streamlit as st
 from folium.plugins import MarkerCluster
-from streamlit_folium import st_folium
+from streamlit.components.v1 import html as st_html
 
 # ============================================================
 # 全局配置
@@ -49,6 +49,58 @@ ALERT_KEY = "alert_threshold_days"               # session_state 键：当前选
 ALERT_OPTIONS = [7, 14, 21, 30, 45, 60, 90, 120, 180]   # 可选的预警天数档位
 CHINA_CENTER = [35.0, 105.0]
 DEFAULT_ZOOM = 4
+
+# 中国省/直辖市/地区 → 中心坐标（选了省但客户无精确坐标时，居中到该省，缩放较近）
+PROVINCE_CENTERS = {
+    "北京": (39.90, 116.41), "上海": (31.23, 121.47), "天津": (39.08, 117.20),
+    "重庆": (29.56, 106.55), "广东": (23.13, 113.26), "浙江": (30.27, 120.16),
+    "江苏": (32.06, 118.80), "福建": (26.07, 119.30), "安徽": (31.82, 117.23),
+    "湖北": (30.59, 114.31), "河北": (38.04, 114.51), "河南": (34.75, 113.63),
+    "山东": (36.65, 117.12), "四川": (30.57, 104.07), "陕西": (34.34, 108.94),
+    "湖南": (28.23, 112.94), "辽宁": (41.81, 123.43), "新疆": (43.83, 87.62),
+    "江西": (28.68, 115.86), "云南": (24.88, 102.83), "贵州": (26.65, 106.63),
+    "广西": (22.82, 108.37), "山西": (37.87, 112.55), "甘肃": (36.06, 103.83),
+    "黑龙江": (45.80, 126.53), "吉林": (43.82, 125.32), "内蒙古": (40.84, 111.75),
+    "宁夏": (38.49, 106.23), "青海": (36.62, 101.78), "海南": (20.04, 110.20),
+    "西藏": (29.65, 91.17), "香港": (22.32, 114.17), "澳门": (22.20, 113.54),
+    "台湾": (25.03, 121.57),
+}
+
+# 海外国家 → 首都坐标（选了某国但客户无精确坐标时，居中到首都，缩放较广）
+WORLD_CAPITALS = {
+    "美国": (38.90, -77.04), "加拿大": (45.42, -75.70), "墨西哥": (19.43, -99.13),
+    "巴西": (-15.79, -47.88), "阿根廷": (-34.60, -58.38), "智利": (-33.45, -70.67),
+    "英国": (51.51, -0.13), "法国": (48.86, 2.35), "德国": (52.52, 13.41),
+    "意大利": (41.90, 12.50), "西班牙": (40.42, -3.70), "葡萄牙": (38.72, -9.14),
+    "荷兰": (52.37, 4.90), "比利时": (50.85, 4.35), "瑞士": (46.95, 7.45),
+    "奥地利": (48.21, 16.37), "爱尔兰": (53.35, -6.26), "瑞典": (59.33, 18.07),
+    "挪威": (59.91, 10.75), "丹麦": (55.68, 12.57), "芬兰": (60.17, 24.94),
+    "波兰": (52.23, 21.01), "希腊": (37.98, 23.73), "捷克": (50.08, 14.44),
+    "俄罗斯": (55.76, 37.62), "乌克兰": (50.45, 30.52), "土耳其": (39.93, 32.86),
+    "日本": (35.68, 139.65), "韩国": (37.57, 126.98), "朝鲜": (39.04, 125.76),
+    "新加坡": (1.35, 103.82), "马来西亚": (3.14, 101.69), "泰国": (13.76, 100.50),
+    "越南": (21.03, 105.85), "菲律宾": (14.60, 120.98), "印度尼西亚": (-6.21, 106.85),
+    "印尼": (-6.21, 106.85), "印度": (28.61, 77.21), "巴基斯坦": (33.69, 73.06),
+    "孟加拉国": (23.81, 90.41), "斯里兰卡": (6.93, 79.86), "尼泊尔": (27.72, 85.32),
+    "阿联酋": (24.45, 54.38), "沙特阿拉伯": (24.71, 46.68), "沙特": (24.71, 46.68),
+    "卡塔尔": (25.29, 51.53), "以色列": (31.77, 35.21), "伊朗": (35.69, 51.39),
+    "埃及": (30.04, 31.24), "南非": (-25.75, 28.19), "尼日利亚": (9.08, 7.40),
+    "肯尼亚": (-1.29, 36.82), "摩洛哥": (34.02, -6.83), "埃塞俄比亚": (9.03, 38.74),
+    "中非共和国": (4.39, 18.56), "刚果": (-4.26, 15.28), "坦桑尼亚": (-6.16, 35.75),
+    "加纳": (5.60, -0.19), "澳大利亚": (-35.28, 149.13), "新西兰": (-41.29, 174.78),
+    "哈萨克斯坦": (51.16, 71.47), "蒙古": (47.89, 106.91),
+    "约旦": (31.95, 35.93), "黎巴嫩": (33.89, 35.50), "卡塔尔": (25.29, 51.53),
+}
+
+
+def region_center_zoom(province: str):
+    """返回某省/国家的(中心坐标, 缩放级别)；无法定位返回(None, None)。
+    中国省份缩放较近(7)，海外国家居中到首都、缩放较广(5)。"""
+    if province in PROVINCE_CENTERS:
+        return PROVINCE_CENTERS[province], 7
+    if province in WORLD_CAPITALS:
+        return WORLD_CAPITALS[province], 5
+    return None, None
 
 # 可选项
 STATUS_OPTIONS = ["潜在客户", "合作中", "已签约", "已流失", "暂不合作"]
@@ -454,8 +506,11 @@ def render_sidebar_alerts(data: list, province: str) -> None:
 # ============================================================
 # 主体：商业地图
 # ============================================================
-def build_map(partners: list) -> folium.Map:
-    m = folium.Map(location=CHINA_CENTER, zoom_start=DEFAULT_ZOOM, tiles="CartoDB positron")
+def build_map(partners: list, center=None, center_zoom: int = 6) -> folium.Map:
+    """绘制客户地图。center 给定时（选了某省），无标记也会把地图居中到该省。"""
+    init_loc = list(center) if center else CHINA_CENTER
+    init_zoom = center_zoom if center else DEFAULT_ZOOM
+    m = folium.Map(location=init_loc, zoom_start=init_zoom, tiles="CartoDB positron")
     # 标记聚合：上千个点也能流畅渲染，缩放时自动聚合/展开
     cluster = MarkerCluster(name="客户").add_to(m)
     coords_on_map = []
@@ -493,9 +548,11 @@ def build_map(partners: list) -> folium.Map:
         ).add_to(cluster)
 
     if len(coords_on_map) >= 2:
-        m.fit_bounds(coords_on_map, padding=(30, 30))
+        m.fit_bounds(coords_on_map, padding=(30, 30))   # 有多个标记：缩放到刚好容纳
     elif len(coords_on_map) == 1:
-        m.location, m.options["zoom"] = coords_on_map[0], 8
+        m.location, m.options["zoom"] = coords_on_map[0], 9
+    elif center:
+        m.location, m.options["zoom"] = list(center), center_zoom   # 无标记但选了省：居中到省
     return m
 
 
@@ -525,7 +582,7 @@ def render_visit_planner(data: list, province: str) -> None:
         partners = [d for d in data if d.get("is_partner")]
         on_map = [p for p in partners if p.get("lat") is not None]
         if on_map:
-            st_folium(build_map(partners), height=480, use_container_width=True, returned_objects=[])
+            st_html(build_map(partners).get_root().render(), height=480)
         else:
             st.info("当前没有『合作中/已签约』且能定位地区的客户。")
         return
@@ -555,9 +612,18 @@ def render_visit_planner(data: list, province: str) -> None:
     st.caption(f"其中合作伙伴 {len(partners_here)} 位 ｜ 地图可定位 {len(on_map)} 位 "
                f"{filter_note} ｜ 🔴 = 超 {get_alert_threshold()} 天未联系，更建议拜访")
 
-    # 地图：聚焦本省客户
-    if on_map:
-        st_folium(build_map(visit), height=420, use_container_width=True, returned_objects=[])
+    # 地图：选了省/国家就一直显示，并定位到对应位置（省→省中心，国家→首都）
+    region_center, region_zoom = region_center_zoom(province)
+    if on_map or region_center:
+        # 直接嵌静态 HTML（不用 st_folium 组件），切省时一定重新渲染、不会消失
+        st_html(
+            build_map(visit, center=region_center, center_zoom=region_zoom or 6).get_root().render(),
+            height=420)
+        if not on_map and region_center:
+            tip = "首都" if province in WORLD_CAPITALS else "地区中心"
+            st.caption(f"ℹ️ 该地区客户暂无精确经纬度，地图已定位到{province}{tip}。")
+    else:
+        st.info(f"『{province}』地区信息太泛（如\"中国大陆/其他\"），无法在地图定位。")
 
     # 拜访清单表格
     rows = []
