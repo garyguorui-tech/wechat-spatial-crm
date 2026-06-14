@@ -113,4 +113,10 @@ python export_data.py
 
 ## 📄 License
 
-[MIT](LICENSE)
+本项目采用 **[PolyForm Noncommercial License 1.0.0](LICENSE)**（非商业许可）：
+
+- ✅ **免费用于**：个人、学习、研究、非营利组织（学校 / 科研 / 公益 / 政府）
+- ❌ **不允许免费商用**：任何商业用途（盈利产品、对外收费服务、企业经营等）均需**单独获取商业授权**
+- 📩 商业授权请通过 [Issues](https://github.com/garyguorui-tech/wechat-spatial-crm/issues) 或仓库主页联系作者
+
+> Licensed under PolyForm Noncommercial 1.0.0 — free for noncommercial use only; commercial use requires a separate license.
