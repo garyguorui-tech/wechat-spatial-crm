@@ -186,18 +186,35 @@ def get_alert_threshold() -> int:
     return int(st.session_state.get(ALERT_KEY, ALERT_THRESHOLD_DAYS))
 
 
+def _resolve_python() -> str:
+    """找一个真正可直接执行的 python.exe（sys.executable 在 LibreOffice 下可能是
+    不可执行的目录形式 python-core-3.12.13，会导致 WinError 5 拒绝访问）。"""
+    candidates = [
+        r"C:\Program Files\LibreOffice\program\python.exe",
+        os.path.join(sys.prefix, "bin", "python.exe"),
+        os.path.join(os.path.dirname(sys.executable), "python.exe"),
+        sys.executable if sys.executable.lower().endswith(".exe") else sys.executable + ".exe",
+        sys.executable,
+    ]
+    for c in candidates:
+        if c and os.path.isfile(c):
+            return c
+    return sys.executable
+
+
 def _launch_collector(script: str, env_extra: dict = None) -> bool:
-    """在新控制台窗口里启动采集脚本（用当前 Python，已含 uiautomation）。返回是否成功。"""
+    """在新控制台窗口里启动采集脚本（脚本顶部会自插 libs 路径，找得到 uiautomation）。"""
     env = os.environ.copy()
     if env_extra:
         env.update(env_extra)
     flags = subprocess.CREATE_NEW_CONSOLE if os.name == "nt" else 0
+    pyexe = _resolve_python()
     try:
-        subprocess.Popen([sys.executable, os.path.join(HERE, script)],
+        subprocess.Popen([pyexe, os.path.join(HERE, script)],
                          cwd=HERE, env=env, creationflags=flags)
         return True
     except Exception as e:
-        st.sidebar.error(f"启动失败：{e}")
+        st.sidebar.error(f"启动失败：{e}（python={pyexe}）")
         return False
 
 

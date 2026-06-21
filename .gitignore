@@ -32,3 +32,8 @@ Thumbs.db
 
 # 所有日志
 *.log
+
+# 数据备份（含真实数据，勿提交）
+*.bak.json
+wechat_data.bak.json
+wx_send_queue.json

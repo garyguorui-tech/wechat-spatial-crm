@@ -699,7 +699,12 @@ def mock_enrich(records: list) -> list:
 # ============================================================
 def save_records(records: list, enrich: bool = True) -> None:
     """把当前已采集的数据落盘。enrich=True 时先做 mock 后处理（补经纬度/预警字段）。
-    用 copy 避免就地修改正在采集的 records（断点续采时还会继续往里加原始数据）。"""
+    用 copy 避免就地修改正在采集的 records（断点续采时还会继续往里加原始数据）。
+
+    安全保护：采到 0 条时绝不写盘（避免把已有数据覆盖成空）。"""
+    if not records:
+        print("  [SKIP-SAVE] 本次采到 0 条，跳过写盘以保护已有数据。")
+        return
     import copy
     out = mock_enrich(copy.deepcopy(records)) if enrich else copy.deepcopy(records)
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
@@ -709,6 +714,16 @@ def save_records(records: list, enrich: bool = True) -> None:
 def main():
     auto.SetGlobalSearchTimeout(3)
     records = []
+
+    # 采集前先把已有数据备份一份（防止本次采集失败/中断把好数据覆盖丢了）
+    if os.path.exists(OUTPUT_FILE) and os.path.getsize(OUTPUT_FILE) > 5:
+        try:
+            import shutil
+            bak = OUTPUT_FILE.replace(".json", ".bak.json")
+            shutil.copy2(OUTPUT_FILE, bak)
+            print(f"[BACKUP] 采集前已把现有数据备份到 {bak}")
+        except Exception as e:
+            print(f"[WARN] 备份现有数据失败（不影响采集）：{e}")
 
     win = get_wechat_window()
 
