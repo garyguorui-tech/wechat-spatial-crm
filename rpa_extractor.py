@@ -290,7 +290,13 @@ def focus_first_contact(contact_list: auto.Control) -> bool:
     if item is None:
         return False
     item.Click(simulateMove=True)
-    human_sleep()
+    human_sleep(0.4, 0.7)
+    # 微信 4.1.10 起：单击不再触发右侧资料卡加载，需用键盘下/上键触发首个好友资料显示
+    try:
+        contact_list.SendKeys("{DOWN}{UP}", waitTime=0.3)
+    except Exception:
+        pass
+    human_sleep(0.6, 1.0)
     return True
 
 
