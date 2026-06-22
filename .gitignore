@@ -37,3 +37,17 @@ Thumbs.db
 *.bak.json
 wechat_data.bak.json
 wx_send_queue.json
+
+# ===== 备注规范化功能的产物（含真实联系人数据，勿提交）=====
+remark_suggestions.json
+remark_suggestions_preview.txt
+remark_decisions.json
+remark_change_queue.json
+remark_change_done.json
+remark_change_*.json
+remark_probe_tree.txt
+dialog_controls.txt
+@AutomationLog.txt
+
+# ===== 用户另加、与本项目无关，勿提交（见交接说明）=====
+wx_sender.py

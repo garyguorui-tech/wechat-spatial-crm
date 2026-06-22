@@ -43,6 +43,12 @@ DATA_FILE = os.path.join(HERE, "wechat_data.json")
 if not os.path.exists(DATA_FILE):
     DATA_FILE = os.path.join(HERE, "wechat_data.sample.json")
 ANNOTATION_FILE = os.path.join(HERE, "crm_annotations.json")   # 人工标注独立存储
+SUGGEST_FILE = os.path.join(HERE, "remark_suggestions.json")   # 备注规范化建议(remark_suggester.py 产)
+DECISIONS_FILE = os.path.join(HERE, "remark_decisions.json")   # 逐个确认的决定(本页存)
+REMARK_QUEUE_FILE = os.path.join(HERE, "remark_change_queue.json")  # 导给 wx_remark_writer.py 回写微信
+REMARK_DONE_FILE = os.path.join(HERE, "remark_change_done.json")    # 回写脚本写回的结果(含每条成败+原因)
+REMARK_SEP = " "                                # 统一备注分隔符（用户拍板：空格）
+REMARK_SLOTS = ("name", "org", "region", "role")   # 统一结构顺序：姓名 单位 地区 角色
 
 ALERT_THRESHOLD_DAYS = 30          # 流失预警默认阈值：超过 N 天未联系（界面可调）
 ALERT_KEY = "alert_threshold_days"               # session_state 键：当前选中的预警天数
@@ -202,19 +208,19 @@ def _resolve_python() -> str:
     return sys.executable
 
 
-def _launch_collector(script: str, env_extra: dict = None) -> bool:
-    """在新控制台窗口里启动采集脚本（脚本顶部会自插 libs 路径，找得到 uiautomation）。"""
+def _launch_collector(script: str, env_extra: dict = None, args: list = None) -> bool:
+    """在新控制台窗口里启动脚本（脚本顶部会自插 libs 路径，找得到 uiautomation）。"""
     env = os.environ.copy()
     if env_extra:
         env.update(env_extra)
     flags = subprocess.CREATE_NEW_CONSOLE if os.name == "nt" else 0
     pyexe = _resolve_python()
     try:
-        subprocess.Popen([pyexe, os.path.join(HERE, script)],
+        subprocess.Popen([pyexe, os.path.join(HERE, script)] + (args or []),
                          cwd=HERE, env=env, creationflags=flags)
         return True
     except Exception as e:
-        st.sidebar.error(f"启动失败：{e}（python={pyexe}）")
+        st.error(f"启动失败：{e}（python={pyexe}）")
         return False
 
 
@@ -786,6 +792,236 @@ def render_manage_tab(data: list, ann: dict) -> None:
 
 
 # ============================================================
+# 备注规范化：逐个确认 → 导出回写队列
+# ============================================================
+def _load_json(path, default):
+    if not os.path.exists(path):
+        return default
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+
+def _save_json(path, obj):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(obj, f, ensure_ascii=False, indent=2)
+
+
+def export_remark_queue(decisions: dict, sugg_by_wxid: dict) -> int:
+    """把 decision==approved 且新备注≠原备注的导成 wx_remark_writer.py 的队列。"""
+    items = []
+    for wxid, dec in decisions.items():
+        if dec.get("decision") != "approved":
+            continue
+        new_remark = (dec.get("final_remark") or "").strip()
+        s = sugg_by_wxid.get(wxid, {})
+        old = s.get("nickname", "")
+        if not new_remark or new_remark == old:
+            continue
+        items.append({
+            "wxid": wxid,
+            "search": s.get("nickname") or wxid,   # 微信搜索词：用原昵称/备注
+            "name": s.get("nickname", ""),
+            "old_remark": old,
+            "new_remark": new_remark,
+        })
+    _save_json(REMARK_QUEUE_FILE, {"items": items})
+    return len(items)
+
+
+def render_remark_tab() -> None:
+    st.subheader("🏷️ 备注规范化 · 逐个确认")
+    st.caption("系统按 昵称/标签/地区 给出建议备注，你逐个采纳或改写。确认后导出队列，再用 "
+               "`wx_remark_writer.py` 半自动回写微信（每条你手动确认，绝不自动改）。")
+
+    suggestions = _load_json(SUGGEST_FILE, None)
+    if not suggestions:
+        st.warning(f"未找到建议文件 `{os.path.basename(SUGGEST_FILE)}`。请先运行："
+                   "`python remark_suggester.py` 生成建议。")
+        return
+    sugg_by_wxid = {s["wxid"]: s for s in suggestions if s.get("wxid")}
+    decisions = _load_json(DECISIONS_FILE, {})
+
+    # ---- 顶部进度 + 筛选 ----
+    n_total = len(suggestions)
+    n_decided = sum(1 for s in suggestions if decisions.get(s["wxid"], {}).get("decision"))
+    n_approved = sum(1 for s in suggestions
+                     if decisions.get(s["wxid"], {}).get("decision") == "approved")
+    cA, cB, cC, cD = st.columns(4)
+    cA.metric("待规范", n_total)
+    cB.metric("已决定", n_decided)
+    cC.metric("已采纳", n_approved)
+    cD.metric("剩余", n_total - n_decided)
+    st.progress(n_decided / n_total if n_total else 0)
+
+    flt = st.radio("筛选", ["未决定的", "仅投资类", "仅建议改动的", "全部"],
+                   horizontal=True, key="remark_filter")
+
+    def keep(s):
+        d = decisions.get(s["wxid"], {}).get("decision")
+        if flt == "未决定的":
+            return not d
+        if flt == "仅投资类":
+            return s.get("is_investor")
+        if flt == "仅建议改动的":
+            return s.get("changed")
+        return True
+
+    work = [s for s in suggestions if keep(s)]
+    if not work:
+        st.success("🎉 该筛选下没有待处理的联系人了。切换筛选或直接导出队列。")
+        _render_export_block(decisions, sugg_by_wxid, n_approved)
+        return
+
+    # ---- 当前卡片索引（随筛选重置边界） ----
+    idx_key = f"remark_idx_{flt}"
+    idx = st.session_state.get(idx_key, 0)
+    idx = max(0, min(idx, len(work) - 1))
+    cur = work[idx]
+    wxid = cur["wxid"]
+    prev_dec = decisions.get(wxid, {})
+
+    st.markdown(f"**第 {idx + 1} / {len(work)} 位**　·　wxid: `{wxid}`"
+                + ("　🟢投资类" if cur.get("is_investor") else ""))
+
+    # 左：现状  右：结构化槽位编辑（姓名 单位 地区 角色 → 空格拼）
+    L, R = st.columns([1, 1.2])
+    with L:
+        st.markdown("**📇 当前**")
+        st.text_input("原昵称 / 当前备注", cur.get("nickname", ""), disabled=True,
+                      key=f"orig_{wxid}")
+        st.text(f"微信地区：{cur.get('region') or '—'}")
+        st.text(f"标签：{cur.get('tags') or '—'}")
+        if cur.get("chat_summary"):
+            st.caption(f"最近消息：{cur['chat_summary']}")
+        if cur.get("phone"):
+            st.caption(f"📞 解析到手机号：{cur['phone']}")
+        st.caption(f"💡 {cur.get('reason', '—')}")
+        if cur.get("linkedin_hint"):
+            st.caption(f"🔗 LinkedIn 线索：{cur['linkedin_hint']}")
+    with R:
+        st.markdown("**✨ 统一备注（结构：姓名 单位 地区 角色）**")
+        # 优先用上次保存的槽位，否则用引擎建议
+        base = prev_dec.get("slots") or cur.get("slots", {})
+        s_name = st.text_input("姓名", base.get("name", ""), key=f"sn_{wxid}")
+        cc1, cc2 = st.columns(2)
+        s_org = cc1.text_input("单位/机构", base.get("org", ""), key=f"so_{wxid}")
+        s_region = cc2.text_input("地区", base.get("region", ""), key=f"sr_{wxid}")
+        s_role = st.text_input("角色（可选）", base.get("role", ""), key=f"srole_{wxid}")
+        slots_now = {"name": s_name, "org": s_org, "region": s_region, "role": s_role}
+        new_remark = REMARK_SEP.join(slots_now[k].strip() for k in REMARK_SLOTS
+                                     if slots_now[k].strip()).strip()
+        st.text_input("→ 最终备注（拼接结果，写回微信用这个）", new_remark,
+                      disabled=True, key=f"final_{wxid}")
+        if prev_dec.get("decision"):
+            st.info("上次决定：" + {"approved": "✅采纳", "skipped": "⏭️跳过",
+                                "keep": "🟰保持"}.get(prev_dec["decision"], prev_dec["decision"]))
+
+    # ---- 动作按钮 ----
+    b1, b2, b3, b4, b5 = st.columns([1, 1, 1, 1, 2])
+
+    def commit(decision, advance=True):
+        decisions[wxid] = {"decision": decision, "final_remark": new_remark.strip(),
+                           "slots": slots_now}
+        _save_json(DECISIONS_FILE, decisions)
+        if advance and idx < len(work) - 1:
+            st.session_state[idx_key] = idx + 1
+        st.rerun()
+
+    if b1.button("✅ 采纳", type="primary", key=f"ap_{wxid}",
+                 help="用右侧（可编辑）的新备注，加入回写队列"):
+        commit("approved")
+    if b2.button("🟰 保持原样", key=f"kp_{wxid}", help="不改这位的备注"):
+        commit("keep")
+    if b3.button("⏭️ 跳过", key=f"sk_{wxid}", help="本次先不决定，之后再看"):
+        commit("skipped")
+    if b4.button("◀ 上一位", key=f"pv_{wxid}") and idx > 0:
+        st.session_state[idx_key] = idx - 1
+        st.rerun()
+    if b5.button("下一位 ▶", key=f"nx_{wxid}") and idx < len(work) - 1:
+        st.session_state[idx_key] = idx + 1
+        st.rerun()
+
+    st.divider()
+    _render_export_block(decisions, sugg_by_wxid, n_approved)
+
+
+def _render_export_block(decisions, sugg_by_wxid, n_approved):
+    st.markdown("#### 📤 导出 & 回写微信")
+    q_existing = _load_json(REMARK_QUEUE_FILE, {"items": []}).get("items", [])
+
+    c1, c2 = st.columns([1, 3])
+    if c1.button("① 生成回写队列", key="export_remark_q", use_container_width=True):
+        n = export_remark_queue(decisions, sugg_by_wxid)
+        st.success(f"已把 {n} 条（采纳且新备注≠原备注）写入 `remark_change_queue.json`。"
+                   "再点②开始回写。")
+        st.rerun()
+    c2.caption(f"已采纳 {n_approved} 位。队列当前 {len(q_existing)} 条。"
+               "①只导出「采纳且新备注≠原备注」的；②会**自动操控微信**逐个改备注（uiautomation，"
+               "不受桌面弹窗干扰）。回写时**保持微信登录、勿动鼠标键盘**。")
+
+    st.markdown("**② 把已采纳的备注回写进微信**（点下面任一个会**自动先生成最新队列**再跑，"
+                "无需先点①；在新弹出的黑窗里看进度）")
+    d1, d2, d3 = st.columns([1, 1, 2])
+    if d1.button("🧪 先演练（不保存）", key="wx_dry", use_container_width=True,
+                 help="走完整流程但每条按取消，不改微信，先验证能跑通"):
+        n = export_remark_queue(decisions, sugg_by_wxid)
+        if n == 0:
+            st.error("没有可回写的条目：请先在上面逐个 **✅采纳**（且新备注≠原备注）再来。")
+        elif _launch_collector("wx_remark_writer.py", args=["dry"]):
+            st.info(f"已用最新采纳生成 {n} 条队列，并在新窗口启动『演练』"
+                    "（逐个打开资料卡填好再取消，不会真改）。")
+    if d2.button("🚀 开始回写", key="wx_write", type="primary", use_container_width=True,
+                 help="真把已采纳的新备注写回微信，每条自动点完成保存"):
+        n = export_remark_queue(decisions, sugg_by_wxid)
+        if n == 0:
+            st.error("没有可回写的条目：请先在上面逐个 **✅采纳**（且新备注≠原备注）再来。")
+        elif _launch_collector("wx_remark_writer.py"):
+            st.warning(f"已用最新采纳生成 {n} 条队列，并启动『回写』。⚠️ 先确认**微信主窗口开着**"
+                       "（缩到托盘要点出来）、保持前台、勿动鼠标键盘。跑完结果记 remark_change_done.json。")
+    d3.caption("回写无人值守（确认已在上面逐个采纳时完成）。建议先🧪演练确认顺畅，再🚀回写。"
+               "①按钮只是想单独看/导出队列时才用。")
+
+    _render_writeback_result()
+
+
+def _render_writeback_result():
+    """显示上次回写结果（脚本边跑边写 remark_change_done.json，可刷新查看）。"""
+    st.markdown("#### 📊 上次回写结果")
+    rc1, rc2 = st.columns([1, 4])
+    if rc1.button("🔁 刷新结果", key="refresh_wb", use_container_width=True):
+        st.rerun()
+    res = _load_json(REMARK_DONE_FILE, None)
+    if not res:
+        rc2.caption("还没有回写记录。跑完🧪演练或🚀回写后，点〔🔁 刷新结果〕这里就会显示成败明细。")
+        return
+    mode = "演练" if res.get("mode") == "dry" else "真回写"
+    total = res.get("total", 0)
+    ok = res.get("ok", 0)
+    failed = res.get("failed", 0)
+    rc2.caption(f"最近一次：**{mode}**　共 {total} 条　·　✅成功 {ok}　·　❌失败 {failed}　"
+                f"（已处理 {ok + failed}/{total}{'，可能还在跑，点刷新' if ok + failed < total else ''}）")
+    results = res.get("results", [])
+    fails = [r for r in results if not r.get("ok")]
+    oks = [r for r in results if r.get("ok")]
+    if fails:
+        st.error(f"❌ 这 {len(fails)} 条没改成功（可重新采纳后再回写一次）：")
+        st.dataframe(
+            [{"联系人": r.get("name"), "想改成": r.get("new_remark"), "原因": r.get("msg")}
+             for r in fails],
+            use_container_width=True, hide_index=True,
+        )
+    if oks:
+        with st.expander(f"✅ 成功 {len(oks)} 条（点开看明细）", expanded=False):
+            st.dataframe(
+                [{"联系人": r.get("name"), "已改成": r.get("new_remark")} for r in oks],
+                use_container_width=True, hide_index=True,
+            )
+
+
+# ============================================================
 # 页面主入口
 # ============================================================
 def main():
@@ -806,11 +1042,13 @@ def main():
     render_data_refresh()
     render_sidebar_alerts(data, province)
 
-    tab1, tab2 = st.tabs(["📊 看板", "✏️ 客户管理"])
+    tab1, tab2, tab3 = st.tabs(["📊 看板", "✏️ 客户管理", "🏷️ 备注规范化"])
     with tab1:
         render_dashboard_tab(data, province)
     with tab2:
         render_manage_tab(data, ann)
+    with tab3:
+        render_remark_tab()
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@
 - ✏️ **可编辑客户管理**：合作状态 / 公司 / 级别 / 行业 / 跟进人 / 备注，存独立文件，重采不丢
 - ⭐ **自动定级**：中国央企→A级、金融机构 / 在合作→B级，其余 C级（关键词规则可改，人工可覆盖）
 - 🏢 **自动识别**：从备注/标签推断公司名与 16 类公司类型
+- 🏷️ **备注规范化**：按统一结构（`姓名 单位 地区 角色`）给出备注建议 → 网页逐个槽位确认 → RPA 半自动回写微信（每条结果含成败原因）
 - 🔄 **网页一键刷新**：在看板上直接触发重新采集
 
 ## 🖼️ 预览 Preview
@@ -83,6 +84,8 @@ python export_data.py
 | `crm_dashboard.py` | 看板：Streamlit + Folium |
 | `run_dashboard.py` | 启动器（可选；自动开浏览器，适配某些受限 Python 环境） |
 | `refresh_sessions.py` | 快速刷新最近会话（看板按钮调用） |
+| `remark_suggester.py` | 备注规范化：按统一结构生成备注建议 |
+| `wx_remark_writer.py` | 备注规范化：RPA 半自动把确认后的备注回写微信 |
 | `export_data.py` | 导出 Excel / CSV |
 | `wechat_data.sample.json` | 示例数据（假数据，供 demo） |
 | `requirements.txt` | 依赖 |

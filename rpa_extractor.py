@@ -216,7 +216,10 @@ def get_wechat_window() -> auto.WindowControl:
         raise RuntimeError("未找到微信主窗口，请先启动并登录 PC 端微信 4.x！")
 
     if win.IsMinimize():                              # 最小化时先还原，否则点击会落空
-        win.ShowWindow(auto.ShowWindowState.Restore)
+        try:
+            win.ShowWindow(auto.SW.Restore)          # SW.Restore=9（此库无 ShowWindowState）
+        except Exception:
+            pass
         human_sleep()
     win.SetActive()
     human_sleep()
